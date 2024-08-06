@@ -30,18 +30,30 @@ def get_db_session():
 
 def classify_input_node(state: GraphState) -> GraphState:
     question = state.get('question', '').strip()
+    if not question:
+        state["response"] = "Please ask a valid question about books."
+        return state
+
     intent_extractor = IntentExtractor()
-    intent_response = intent_extractor.classify_intent_and_extract_entities(question)
-    logging.info(f"Intent Number: {intent_response.intent_number}, Entity: {intent_response.entity_name}, Num Recommendations: {intent_response.num_recommendations}")
-    state.update({
-        "intent_number": intent_response.intent_number,
-        "entity_name": intent_response.entity_name,
-        "num_recommendations": intent_response.num_recommendations or 2,
-    })
+    try:
+        intent_response = intent_extractor.classify_intent_and_extract_entities(question)
+        logging.info(f"Intent Number: {intent_response.intent_number}, Entity: {intent_response.entity_name}, Num Recommendations: {intent_response.num_recommendations}")
+        state.update({
+            "intent_number": intent_response.intent_number,
+            "entity_name": intent_response.entity_name,
+            "num_recommendations": intent_response.num_recommendations or 2,
+        })
+    except Exception as e:
+        logging.error(f"Failed to classify intent: {e}")
+        state["response"] = "Sorry, I couldn't understand your question. Please try again."
     return state
 
 def retrieve_book_info(state: GraphState) -> GraphState:
     entity_name = state.get('entity_name', '')
+    if not entity_name:
+        state["response"] = "Please provide a book title to search for."
+        return state
+
     with get_db_session() as db:
         logging.info(f"Fetching book info for: {entity_name}")
         book = db.query(Book).filter(Book.title.ilike(f"%{entity_name}%")).first()
@@ -55,6 +67,7 @@ def retrieve_book_info(state: GraphState) -> GraphState:
             }
             logging.info(f"Book info retrieved: {state['book_info']}")
         else:
+            logging.warning(f"No information found for book: {entity_name}")
             state["response"] = "No information found for the specified book."
     return state
 
