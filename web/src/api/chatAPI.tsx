@@ -1,4 +1,4 @@
-// src/api/chatAPI.tsx
+
 import axiosInstance from "./config";
 import { ChatResponse } from "./interfaces";
 

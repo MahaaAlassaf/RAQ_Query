@@ -204,15 +204,12 @@ async def update_user(user_update: UserUpdateCurrent, current_user: dict = test_
 
 @app.post("/query")
 async def query_books(query: Query):
-    # Validate and extract the query description
     description = query.description
     if not description:
         raise HTTPException(status_code=400, detail="Description is required.")
 
-    # Initialize the database session
     db_session = connect_to_db()
 
-    # Extract intent and entity
     intent_extractor = IntentExtractor()
     intent_response = intent_extractor.classify_intent_and_extract_entities(description)
     intent_number = intent_response.intent_number
@@ -222,7 +219,6 @@ async def query_books(query: Query):
         if intent_number and entity_name:
             initial_state = {"question": description, "intent_number": intent_number, "entity_name": entity_name}
 
-            # Run the compiled workflow with the initial state
             response_state = app.invoke(initial_state)
 
             response = response_state.get('response', 'No response generated.')
@@ -253,6 +249,7 @@ def health_check():
     return {"status": "healthy"}
 
 
+# favorites 
 @app.post("/favorites/{book_id}")
 def add_favorite(book_id: int, current_user: dict = test_user, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == current_user["email"]).first()

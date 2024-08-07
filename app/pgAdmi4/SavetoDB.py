@@ -42,9 +42,8 @@ def main():
                 num_pages=row['num_pages'],
                 ratings_count=row['ratings_count']
             )
-            # Add the book to the session
             session.add(book)
-            session.flush()  # Ensure the book is in the session and has an ID
+            session.flush()  
             
             author_names = row['authors'].split(';')
             for name in author_names:

@@ -13,7 +13,6 @@ from app.database.schemas.author import Author
 from app.database.schemas.book_author_association import book_author_association 
 
 def delete_and_reset_all_data():
-    # Connect to the database
     engine, SessionLocal = connect_to_db() 
     
     session = SessionLocal()

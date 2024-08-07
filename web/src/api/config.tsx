@@ -1,4 +1,4 @@
-// src/api/config.tsx
+
 import axios from "axios";
 
 const baseURL = "http://localhost:6969/";

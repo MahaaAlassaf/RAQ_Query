@@ -2,6 +2,8 @@
 import axios from "axios";
 import { RegisterUserData, LoginUserData } from "./interfaces";
 
+
+
 // Register a new user
 export const registerUser = async (userData: RegisterUserData) => {
   try {

@@ -2,7 +2,6 @@ from sqlalchemy import select, update
 from app.database.connector import connect_to_db
 from app.database.schemas.user import User
 from app.utils.hash import deterministic_hash
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 def retrieve_single_user(email: str, db: Session):
@@ -23,9 +22,9 @@ def retrieve_single_user(email: str, db: Session):
         return False, str(e), None
 
 
+# authenticate_user
 def authenticate_user(email: str, password: str, db: Session):
     try:
-        # Query the database for the user's hashed password
         stmt = select(User.hashed_pw).where(User.email == email)
         result = db.execute(stmt)
         output = result.fetchone()
@@ -124,28 +123,4 @@ def authenticate_user(email: str, password: str, db: Session):
     except Exception as e:
         print(f"Authentication error: {e}")
         return False, str(e)
-        
-# def authenticate_user(email, password):
-#     try:
-#         engine, SessionLocal = connect_to_db()
-#         session: Session = SessionLocal()  # Create a session instance
-
-#         stmt = select(User.hashed_pw).where(User.email == email)
-#         with engine.connect() as conn:
-#             results = conn.execute(stmt)
-#             output = results.fetchone()
-#             if output is None:
-#                 return False, "User not registered"
-#             else:
-#                 # Log for debugging
-#                 print(output[0], deterministic_hash(password))
-#                 if output[0] == deterministic_hash(password):
-#                     return True, "Login successful"
-#                 else:
-#                     return False, "Wrong password"
-#     except Exception as e:
-#         print(f"Authentication error: {e}")
-#         return False, str(e)
-#     finally:
-#         session.close()  # Ensure you close the session instance
-
+    

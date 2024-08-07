@@ -4,11 +4,13 @@ from sqlalchemy import select, delete, insert, update, join
 from app.database.connector import connect_to_db
 from app.database.schemas.books import Book
 from app.database.schemas.preferences import Preferences
-from app.database.schemas.user import User
 from app.database.schemas.author import Author
-from app.database.schemas.book_author_association import book_author_association
 from app.services.author_services import retrieve_single_author
 from app.schemas.book import BookUpdateCurrent
+
+
+# Not ccomplated 
+from app.database.schemas.book_author_association import book_author_association
 
 def insert_book(session: Session, title: str, genre: str, description: str, year: int):
     new_book = Book(title=title, genre=genre, description=description, year=year)

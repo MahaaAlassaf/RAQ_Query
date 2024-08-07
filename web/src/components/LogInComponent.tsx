@@ -28,7 +28,7 @@ const LogInComponent: React.FC = () => {
       const response = await loginUser(loginData);
       console.log('Login successful:', response);
     } catch (err) {
-      setError('Login failed. Please check your credentials and try again.');
+      setError('Login failed.');
     } finally {
       setIsLoading(false);
     }
