@@ -99,8 +99,6 @@ def chat_with_bot(query: str):
     except Exception as e:
         print(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-
 
 @app.post("/books")
 def add_book(book: Book, current_user: dict = test_user):

@@ -5,7 +5,7 @@ import { RegisterUserData, LoginUserData } from "./interfaces";
 // Register a new user
 export const registerUser = async (userData: RegisterUserData) => {
   try {
-    console.log(userData); // Check the structure and content
+    console.log(userData); 
     const response = await axios.post('http://localhost:6969/users/register', userData);
     return response.data;
   } catch (error: any) {
@@ -19,7 +19,7 @@ export const loginUser = async (loginData: LoginUserData) => {
   try {
     const response = await axios.post('http://localhost:6969/users/login', loginData, {
       headers: {
-        'Content-Type': 'application/json',  // Ensure correct content type
+        'Content-Type': 'application/json', 
       },
     });
     return response.data;

@@ -64,6 +64,7 @@ class IntentExtractor:
                 Intent Number: [1-6]
                 Entity: [Entity Name]
                 
+                Entity name must not contain any exstra information of context. for example , if the user input "Who is the auther of harry potter?" the entity name should be "harry potter"
                 '{document}'
                 """
             )
@@ -79,18 +80,15 @@ class IntentExtractor:
         print(f"Response: {response}")
 
         try:
-            # Extract response using regex
             intent_match = re.search(r"Intent Number: (\d+)", response)
             entity_match = re.search(r"Entity: ([^\n]+)", response)
 
-            # Create Pydantic object to validate output
             intent_response = IntentResponseModel(
                 intent_number=int(intent_match.group(1)) if intent_match else 0,
                 entity_name=entity_match.group(1).strip() if entity_match else "",
                 num_recommendations=num_recommendations
             )
 
-            # Add AI response to memory
             memory.chat_memory.add_ai_message(response)
 
             return intent_response

@@ -31,6 +31,7 @@ const Search: React.FC<SearchProps> = ({ title, setTitle }) => {
           className="p-2 text-white rounded bg-transparent hover:bg-blue-800 transition"
           aria-label="Search"
         >
+          
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <mask id="mask0_1_1778" style={{ maskType: "luminance" }} maskUnits="userSpaceOnUse" x="2" y="2" width="20" height="20">
               <path d="M2 2H21.4768V21.477H2V2Z" fill="white" />
@@ -45,6 +46,7 @@ const Search: React.FC<SearchProps> = ({ title, setTitle }) => {
               <path d="M21.514 22.7218C21.323 22.7218 21.131 22.6488 20.984 22.5028L17.46 18.9888C17.167 18.6958 17.166 18.2208 17.459 17.9278C17.751 17.6328 18.226 17.6348 18.52 17.9258L22.044 21.4408C22.337 21.7338 22.338 22.2078 22.045 22.5008C21.899 22.6488 21.706 22.7218 21.514 22.7218Z" fill="#F7F5FF" />
             </g>
           </svg>
+
         </button>
         <input
           type="text"
@@ -71,6 +73,7 @@ const Search: React.FC<SearchProps> = ({ title, setTitle }) => {
           ))}
         </select>
       </div>
+
     </header>
   );
 };
