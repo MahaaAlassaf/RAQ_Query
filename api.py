@@ -6,6 +6,7 @@ from datetime import timedelta
 from requests import Session
 from app.database.connector import connect_to_db, get_db
 from app.middleware.request_logger import setup_middleware
+from app.utils import get_current_user
 from llm2.langgraph_integration import app as langgraph_app
 # Import necessary services and modules
 from app.database.schemas.query import Query
@@ -243,43 +244,42 @@ def get_recommendations(description: str):
         return {"message": "Recommendations fetched successfully", "book_recommendations": book_recommendations}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+ 
 @app.get("/healthcheck")
 def health_check():
     return {"status": "healthy"}
 
 
-# favorites 
-@app.post("/favorites/{book_id}")
-def add_favorite(book_id: int, current_user: dict = test_user, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == current_user["email"]).first()
-    book = db.query(User).filter(User.id == book_id).first()
+# # favorites 
+# @app.post("/favorites/{book_id}")
+# def add_favorite(book_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+#     user = db.query(User).filter(User.email == current_user.email).first()
+#     book = db.query(Book).filter(Book.id == book_id).first()
 
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
+#     if not book:
+#         raise HTTPException(status_code=404, detail="Book not found")
 
-    if book not in user.favorite_books:
-        user.favorite_books.append(book)
-        db.commit()
-        return {"message": "Book added to favorites"}
-    else:
-        return {"message": "Book is already in favorites"}
+#     if book in user.favorite_books:
+#         raise HTTPException(status_code=400, detail="Book is already in favorites")
 
-@app.delete("/favorites/{book_id}")
-def remove_favorite(book_id: int, current_user: dict = test_user, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == current_user["email"]).first()
-    book = db.query(User).filter(User.id == book_id).first()
+#     user.favorite_books.append(book)
+#     db.commit()
+#     return {"message": "Book added to favorites"}
 
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
+# @app.delete("/favorites/{book_id}")
+# def remove_favorite(book_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+#     user = db.query(User).filter(User.email == current_user.email).first()
+#     book = db.query(Book).filter(Book.id == book_id).first()
 
-    if book in user.favorite_books:
-        user.favorite_books.remove(book)
-        db.commit()
-        return {"message": "Book removed from favorites"}
-    else:
-        return {"message": "Book is not in favorites"}
+#     if not book:
+#         raise HTTPException(status_code=404, detail="Book not found")
 
+#     if book not in user.favorite_books:
+#         raise HTTPException(status_code=400, detail="Book is not in favorites")
+
+#     user.favorite_books.remove(book)
+#     db.commit()
+#     return {"message": "Book removed from favorites"}
 
 # run the server
 if __name__ == "__main__":

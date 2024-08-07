@@ -13,7 +13,7 @@ import logging
 
 ollama_model = OllamaLLM(model="llama3.1")
 
-memory = ConversationBufferMemory(memory_key="chatHistory")
+memory = ConversationBufferMemory(memory_key="chat_history")
 
 # Define the GraphState class
 class GraphState(TypedDict):
