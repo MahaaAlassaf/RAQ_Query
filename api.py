@@ -350,7 +350,7 @@ if __name__ == "__main__":
 # @app.post("/books")
 # def add_book(book: Book, current_user: Annotated[dict, Depends(get_current_user)]):
 #     if not current_user or current_user["role"] != 1:
-#         raise HTTPException(status_code=403, detail="Not Authorized")
+#         raise HTTPException(status_code=403, detail="Not get_current_user")
 #     success, message, book_id = add_book_to_db(book)
 #     if not success:
 #         raise HTTPException(status_code=400, detail=message)

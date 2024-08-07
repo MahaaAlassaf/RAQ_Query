@@ -13,7 +13,6 @@ class VectorDataManager:
         print("VectorDataManager initialized.")
 
     def recommend_books(self, query: str, num_results: int = 2):
-        # Encode the query into a vector
         print("Querying ChromaDB for recommendations...")
         print("Query:", query) 
         query_vector = self.model.encode(query).tolist()

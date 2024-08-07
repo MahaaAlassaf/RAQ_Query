@@ -26,10 +26,8 @@ class IntentExtractor:
         number_pattern = re.compile(r'\b(\d+)\b')
         number_match = number_pattern.search(document)
         
-        # Default to 2 recommendations if no number is specified
         num_recommendations = int(number_match.group(1)) if number_match else 2
 
-        # Construct the prompt including conversation history
         prompt_message = HumanMessage(
             content=(
                 f"""
