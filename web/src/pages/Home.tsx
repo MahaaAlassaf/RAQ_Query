@@ -43,7 +43,7 @@ const Home: React.FC = () => {
         <LogInSignUp />
       </div>
       <div className="flex flex-col overflow-y-auto pb-6">
-        <div className="grid sm:grid-cols-2  md:grid-cols-4 xl:grid-cols-6 lg:grid-cols-5 gap-8">
+        <div className="grid sm:grid-cols-2  md:grid-cols-4 xl:grid-cols-5 lg:grid-cols-5 gap-8">
           {books.map((book) => (
             <Book key={book.id} book={book} />
           ))}
