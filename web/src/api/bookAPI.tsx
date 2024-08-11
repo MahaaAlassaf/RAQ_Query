@@ -2,7 +2,6 @@
 import axiosInstance from "./config";
 import { GetBooksResponse, GetBookByIdResponse } from "./interfaces";
 
-// implement paginated get books API
 export const getBooks = async (
   title: string = "",
   limit: number = 10,
