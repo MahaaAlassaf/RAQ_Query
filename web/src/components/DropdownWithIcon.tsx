@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode"; 
 import LogInComponent from "./LogInComponent";
 import SignUpComponent from "./SignUpComponent";
 import { logoutUser } from "../api/userAPI";
@@ -135,7 +136,3 @@ const DropdownWithIcon: React.FC = () => {
 };
 
 export default DropdownWithIcon;
-function jwtDecode(token: string): any {
-  throw new Error("Function not implemented.");
-}
-
