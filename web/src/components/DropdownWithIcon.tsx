@@ -13,10 +13,19 @@ const DropdownWithIcon: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     const userInfo = localStorage.getItem("user_info");
-    const user = JSON.parse(userInfo || "{}");
+
     if (token && userInfo) {
-      setIsLogged(true);
-      setUserName(user.fname);
+      const decodedToken: any = jwtDecode(token); 
+      const currentTime = Date.now() / 1000;
+
+      // Check if token is expired
+      if (decodedToken.exp < currentTime) {
+        handleLogOut();
+      } else {
+        setIsLogged(true);
+        const user = JSON.parse(userInfo || "{}");
+        setUserName(user.fname);
+      }
     }
   }, []);
 
@@ -40,6 +49,8 @@ const DropdownWithIcon: React.FC = () => {
   const handleLogOut = () => {
     logoutUser();
     setIsLogged(false);
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("user_info");
     // force refresh to update the UI
     window.location.reload();
     setIsOpen(false);
@@ -124,3 +135,7 @@ const DropdownWithIcon: React.FC = () => {
 };
 
 export default DropdownWithIcon;
+function jwtDecode(token: string): any {
+  throw new Error("Function not implemented.");
+}
+
