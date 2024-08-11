@@ -12,6 +12,7 @@ export interface Book {
   num_pages: number;
   ratings_count: number;
   authors: string[];
+  is_fav: boolean;
 }
 
 export interface GetBooksResponse {
@@ -31,19 +32,29 @@ export interface ChatResponse {
   response: string;
 }
 
-
 export interface RegisterUserData {
   email: string;
-  fname: string;    
-  lname: string;   
+  fname: string;
+  lname: string;
   username: string;
   password: string;
-  role: number;     
+  role: number;
 }
 
 export interface LoginUserData {
   email: string;
   password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user_info: {
+    email: string;
+    fname: string;
+    lname: string;
+    role: number;
+  };
 }
 
 export interface BookGalleryProps {

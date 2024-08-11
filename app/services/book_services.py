@@ -3,14 +3,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, delete, insert, update, join
 from app.database.connector import connect_to_db
 from app.database.schemas.books import Book
-from app.database.schemas.preferences import Preferences
+from app.database.schemas.user import User
 from app.database.schemas.author import Author
+from app.database.schemas.book_author_association import book_author_association
 from app.services.author_services import retrieve_single_author
 from app.schemas.book import BookUpdateCurrent
-
-
-# Not ccomplated 
-from app.database.schemas.book_author_association import book_author_association
 
 def insert_book(session: Session, title: str, genre: str, description: str, year: int):
     new_book = Book(title=title, genre=genre, description=description, year=year)
@@ -25,26 +22,6 @@ def create_book(db: Session, title: str, genre: str, description: str, year: int
     db.commit()
     db.refresh(db_book)
     return db_book
-
-def get_book_recommendations(email: str):
-    try:
-        engine, session = connect_to_db()
-        stmt = select(Preferences.preference).where(Preferences.email == email)
-        with engine.connect() as conn:
-            results = conn.execute(stmt)
-            genres = list(map(lambda x: x[0], results.fetchall()))
-            if len(genres) == 0:
-                return False, "User has no preferences", None
-            stmt = select(Book.title).where(Book.genre.in_(genres)).limit(5)
-            results = conn.execute(stmt)
-            recommendations = list(map(lambda x: x[0], results.fetchall()))
-            if len(recommendations) == 0:
-                return False, "No recommendations found", None
-            return True, "Recommendations successfully retrieved", recommendations
-    except Exception as e:
-        return False, e, None
-    finally:
-        session.close()
 
 
 def retrieve_single_book(session: Session, id: int):
@@ -71,33 +48,17 @@ def retrieve_single_book(session: Session, id: int):
         return False, str(e), None
     
 
-def retrieve_books_from_db(session: Session, limit: int, offset: int):
+def retrieve_books_from_db(session: Session, limit: int, offset: int, email: str = None):
     try:
         books = session.query(Book).offset(offset).limit(limit).all()
-        book_list = [
-            {
-                "id": book.id,  # Correct attribute name for the primary key
-                "title": book.title,
-                "subtitle": book.subtitle,
-                "thumbnail": book.thumbnail,
-                "genre": book.genre,
-                "published_year": book.published_year,
-                "description": book.description,
-                "average_rating": book.average_rating,
-                "num_pages": book.num_pages,
-                "ratings_count": book.ratings_count,
-                "authors": [author.name for author in book.authors]
-            }
-            for book in books
-        ]
-        return True, "Books retrieved successfully", book_list
-    except Exception as e:
-        print(f"Error retrieving books: {e}")
-        return False, str(e), []
 
-def search_books_by_title(session: Session, title: str, limit: int, offset: int):
-    try:
-        books = session.query(Book).filter(Book.title.ilike(f'%{title}%')).offset(offset).limit(limit).all()
+        # Retrieve the user's favorite books if email is provided
+        favorite_books_ids = []
+        if email:
+            user = session.query(User).filter(User.email == email).first()
+            if user:
+                favorite_books_ids = [book.id for book in user.favorite_books]
+
         book_list = [
             {
                 "id": book.id,
@@ -110,10 +71,46 @@ def search_books_by_title(session: Session, title: str, limit: int, offset: int)
                 "average_rating": book.average_rating,
                 "num_pages": book.num_pages,
                 "ratings_count": book.ratings_count,
-                "authors": [author.name for author in book.authors]
+                "authors": [author.name for author in book.authors],
+                "is_fav": book.id in favorite_books_ids  # Check if the book is in the user's favorites
             }
             for book in books
         ]
+        
+        return True, "Books retrieved successfully", book_list
+    except Exception as e:
+        print(f"Error retrieving books: {e}")
+        return False, str(e), []
+
+def search_books_by_title(session: Session, title: str, limit: int, offset: int, email: str = None):
+    try:
+        books = session.query(Book).filter(Book.title.ilike(f'%{title}%')).offset(offset).limit(limit).all()
+        
+        # Retrieve the user's favorite books if email is provided
+        favorite_books_ids = []
+        if email:
+            user = session.query(User).filter(User.email == email).first()
+            if user:
+                favorite_books_ids = [book.id for book in user.favorite_books]
+
+        book_list = [
+            {
+                "id": book.id,
+                "title": book.title,
+                "subtitle": book.subtitle,
+                "thumbnail": book.thumbnail,
+                "genre": book.genre,
+                "published_year": book.published_year,
+                "description": book.description,
+                "average_rating": book.average_rating,
+                "num_pages": book.num_pages,
+                "ratings_count": book.ratings_count,
+                "authors": [author.name for author in book.authors],
+                "is_fav": book.id in favorite_books_ids  # Check if the book is in the user's favorites
+            }
+            for book in books
+        ]
+        
         return True, "Books retrieved successfully", book_list
     except Exception as e:
         print(f"Error searching books: {e}")
@@ -207,3 +204,45 @@ def edit_book_info(book_id: int, new_book: BookUpdateCurrent):
         session.close()
 
     return True, "Book information successfully updated"
+
+def add_to_favourites(db: Session, email: str, book_id: int):
+    # Retrieve the user by email
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return False, "User not found"
+
+    # Retrieve the book by ID
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if not book:
+        return False, "Book not found"
+
+    # Check if the book is already in the user's favorites
+    if book in user.favorite_books:
+        return False, "Book already in favorites"
+
+    # Add the book to the user's favorites
+    user.favorite_books.append(book)
+    db.commit()
+
+    return True, "Book added to favorites"
+
+def remove_from_favourites(db: Session, email: str, book_id: int):
+    # Retrieve the user by email
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return False, "User not found"
+
+    # Retrieve the book by ID
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if not book:
+        return False, "Book not found"
+
+    # Check if the book is in the user's favorites
+    if book not in user.favorite_books:
+        return False, "Book not in favorites"
+
+    # Remove the book from the user's favorites
+    user.favorite_books.remove(book)
+    db.commit()
+
+    return True, "Book removed from favorites"

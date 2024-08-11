@@ -1,4 +1,4 @@
-
+// src/api/config.tsx
 import axios from "axios";
 
 const baseURL = "http://localhost:6969/";
@@ -12,6 +12,20 @@ const axiosInstance = axios.create({
 
 axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
 axios.defaults.xsrfCookieName = "csrftoken";
+
+// Request interceptor to add the token to headers
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 //  handling 400
 axiosInstance.interceptors.response.use(
