@@ -52,16 +52,16 @@ const AdminPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-blue-900">Admin Dashboard</h1>
+    <div className="p-6 bg-primary min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-white">Admin Dashboard</h1>
       {error && <div className="text-red-600 mb-6">{error}</div>}
 
       {/* Users Table */}
       <div className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4 text-blue-800">Users</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-slate">Users</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white shadow-md rounded-lg">
-            <thead className="bg-blue-800 text-white">
+          <table className="min-w-full bg-secondary shadow-md rounded-lg">
+            <thead className="bg-slate text-white">
               <tr>
                 <th className="px-6 py-3 text-left">Email</th>
                 <th className="px-6 py-3 text-left">First Name</th>
@@ -74,10 +74,10 @@ const AdminPage: React.FC = () => {
               {users.length > 0 ? (
                 users.map((user) => (
                   <tr key={user.email} className="border-t">
-                    <td className="px-6 py-4 text-left text-gray-700">{user.email}</td>
-                    <td className="px-6 py-4 text-left text-gray-700">{user.fname}</td>
-                    <td className="px-6 py-4 text-left text-gray-700">{user.lname}</td>
-                    <td className="px-6 py-4 text-left text-gray-700">{user.role === 1 ? "Admin" : "User"}</td>
+                    <td className="px-6 py-4 text-left text-gray-100">{user.email}</td>
+                    <td className="px-6 py-4 text-left text-gray-100">{user.fname}</td>
+                    <td className="px-6 py-4 text-left text-gray-100">{user.lname}</td>
+                    <td className="px-6 py-4 text-left text-gray-100">{user.role === 1 ? "Admin" : "User"}</td>
                     <td className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleDeleteUser(user.email)}
@@ -100,10 +100,10 @@ const AdminPage: React.FC = () => {
 
       {/* Books Table */}
       <div>
-        <h2 className="text-2xl font-semibold mb-4 text-blue-800">Books</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-slate">Books</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white shadow-md rounded-lg">
-            <thead className="bg-blue-800 text-white">
+          <table className="min-w-full bg-secondary shadow-md rounded-lg">
+            <thead className="bg-slate text-white">
               <tr>
                 <th className="px-6 py-3 text-left">Title</th>
                 <th className="px-6 py-3 text-left">Authors</th>
@@ -116,12 +116,12 @@ const AdminPage: React.FC = () => {
               {books.length > 0 ? (
                 books.map((book) => (
                   <tr key={book.id} className="border-t">
-                    <td className="px-6 py-4 text-left text-gray-700">{book.title}</td>
-                    <td className="px-6 py-4 text-left text-gray-700">
+                    <td className="px-6 py-4 text-left text-gray-100">{book.title}</td>
+                    <td className="px-6 py-4 text-left text-gray-100">
                       {Array.isArray(book.authors) ? book.authors.join(", ") : "Unknown"}
                     </td>
-                    <td className="px-6 py-4 text-left text-gray-700">{book.published_year}</td>
-                    <td className="px-6 py-4 text-left text-gray-700">{book.genre}</td>
+                    <td className="px-6 py-4 text-left text-gray-100">{book.published_year}</td>
+                    <td className="px-6 py-4 text-left text-gray-100">{book.genre}</td>
                     <td className="px-6 py-4 text-left">
                       <button
                         onClick={() => handleDeleteBook(book.id)}
