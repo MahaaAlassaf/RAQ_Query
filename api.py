@@ -17,6 +17,8 @@ from app.services.author_services import (
     delete_author_from_db
 )
 from app.services.user_services import (
+    delete_user,
+    retrieve_all_users,
     retrieve_single_user,
     authenticate_user,
     edit_user_info,
@@ -66,10 +68,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for testing
+    allow_origins=["*"], 
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"], 
+    allow_headers=["*"], 
 )
 
 # Add custom middleware
@@ -158,7 +160,6 @@ def remove_book_from_favorites(request: FavoriteRequest,
         raise HTTPException(status_code=500, detail=message)
     return {"message": message, "book_id": book_id, "user_email": user_email}
 
-
 @app.get("/chat")
 def chat_with_bot(query: str):
     model_input = {
@@ -172,8 +173,6 @@ def chat_with_bot(query: str):
         print(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
-
-
 @app.post("/books")
 def add_book(book: Book, current_user: dict = test_user):
     success, message, book_id = add_book_to_db(book)
@@ -237,21 +236,18 @@ def add_user(user: User):
 
 @app.post("/users/login")
 async def auth_user(login_data: Login, db: Session = Depends(get_db)):
-    print("Received login data:", login_data)
-
-    auth, message = authenticate_user(login_data.email, login_data.password, db)
+    # Unpack the three values returned by authenticate_user
+    auth, message, user_info = authenticate_user(login_data.email, login_data.password, db)
+    
     if not auth:
         raise HTTPException(status_code=401, detail=message)
 
-    success, message, user_info = retrieve_single_user(login_data.email, db)
-    if not success:
-        raise HTTPException(status_code=400, detail=message)
-
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
     access_token = create_access_token(
-        data={"email": user_info["email"]}, expires_delta=access_token_expires
+        data={"email": user_info["email"], "role": user_info["role"]},  # Include role in token
+        expires_delta=access_token_expires
     )
+    
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -274,7 +270,6 @@ async def update_user(user_update: UserUpdateCurrent, current_user: dict = test_
         data={"sub": user}, expires_delta=access_token_expires
     )
     return {"message": message, "token": access_token}
-
 
 @app.post("/query")
 async def query_books(query: Query):
@@ -326,7 +321,6 @@ def get_recommendations(description: str):
 def health_check():
     return {"status": "healthy"}
 
-
 @app.post("/favorites/{book_id}")
 def add_favorite(book_id: int, current_user: dict = test_user, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == current_user["email"]).first()
@@ -357,6 +351,53 @@ def remove_favorite(book_id: int, current_user: dict = test_user, db: Session = 
     else:
         return {"message": "Book is not in favorites"}
 
+#-----------------------------------------------------------------------------------
+
+# Admin-only endpoint to retrieve all users and their roles
+@app.get("/admin/users")
+def get_all_users(db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
+    payload = verify_token(token)
+    if payload.get("role") != 1: 
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+    
+    users = retrieve_all_users(db)
+    return users  # Return users directly instead of {"users": users}
+
+# Admin-only endpoint to delete a user
+@app.delete("/admin/users/{email}")
+def remove_user(email: str, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
+    payload = verify_token(token)
+    if payload.get("role") != 1:
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+
+    success, message = delete_user(db, email)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": "User deleted successfully"}
+
+# Admin-only endpoint to add a new book
+@app.post("/admin/books")
+def admin_add_book(book: Book, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
+    payload = verify_token(token)
+    if payload.get("role") != 1:
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+
+    success, message, book_id = add_book_to_db(book, db)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": "Book added successfully", "book_id": book_id}
+
+# Admin-only endpoint to delete a book
+@app.delete("/admin/books/{book_id}")
+def admin_delete_book(book_id: int, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
+    payload = verify_token(token)
+    if payload.get("role") != 1:
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+
+    success, message = delete_book_from_db(db, book_id)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": "Book deleted successfully"}
 
 # run the server
 if __name__ == "__main__":

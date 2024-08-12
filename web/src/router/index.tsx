@@ -1,29 +1,17 @@
-// src/router/index.tsx
-import React, { useEffect } from "react";
-import { BrowserRouter, Route, Routes, Link } from "react-router-dom";
+import React from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "../pages/Home";
 import BookDetails from "../pages/BookDetails";
-
-import { useLocation } from "react-router";
-
-const ScrollToTop = (props: { children: any }) => {
-  const location = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location]);
-
-  return <>{props.children}</>;
-};
+import AdminPage from "../pages/AdminPage"; // Import AdminPage
 
 const Router: React.FC = () => {
   return (
     <BrowserRouter>
-      <ScrollToTop>
-        <Routes>
-          <Route path="/" Component={Home} />
-          <Route path="/book/:id" Component={BookDetails} />
-        </Routes>
-      </ScrollToTop>
+      <Routes>
+        <Route path="/" Component={Home} />
+        <Route path="/book/:id" Component={BookDetails} />
+        <Route path="/admin/users" Component={AdminPage} /> {/* Admin route */}
+      </Routes>
     </BrowserRouter>
   );
 };

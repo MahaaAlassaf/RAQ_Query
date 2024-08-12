@@ -25,20 +25,21 @@ def retrieve_single_user(email: str, db: Session):
 # authenticate_user
 def authenticate_user(email: str, password: str, db: Session):
     try:
-        stmt = select(User.hashed_pw).where(User.email == email)
+        stmt = select(User.hashed_pw, User.role).where(User.email == email)
         result = db.execute(stmt)
         output = result.fetchone()
 
         if output is None:
-            return False, "User not registered"
+            return False, "User not registered", None
         else:
             if output[0] == deterministic_hash(password):
-                return True, "Login successful"
+                return True, "Login successful", {"email": email, "role": output[1]}
             else:
-                return False, "Wrong password"
+                return False, "Wrong password", None
     except Exception as e:
         print(f"Authentication error: {e}")
-        return False, str(e)
+        return False, str(e), None
+
 
 
 def edit_user_info(email, user_update):
@@ -105,22 +106,20 @@ def register_user(user_data):
     finally:
         session.close()  # Close the session instance
 
-def authenticate_user(email: str, password: str, db: Session):
-    try:
-        stmt = select(User.hashed_pw).where(User.email == email)
-        result = db.execute(stmt)
-        output = result.fetchone()
 
-        if output is None:
-            return False, "User not registered"
-        else:
-            # Log for debugging
-            print(output[0], deterministic_hash(password))
-            if output[0] == deterministic_hash(password):
-                return True, "Login successful"
-            else:
-                return False, "Wrong password"
-    except Exception as e:
-        print(f"Authentication error: {e}")
-        return False, str(e)
+def delete_user(db: Session, email: str):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return False, "User not found"
     
+    db.delete(user)
+    db.commit()
+    return True, "User deleted successfully"
+
+
+
+def retrieve_all_users(db: Session):
+    users = db.query(User).all()
+    return [{"email": user.email, "fname": user.fname, "lname": user.lname, "role": user.role} for user in users]
+
+

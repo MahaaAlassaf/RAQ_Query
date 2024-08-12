@@ -61,3 +61,20 @@ export interface BookGalleryProps {
   books: Book[];
   searchMessage?: string;
 }
+
+export interface UserResponse {
+  id: number;
+  fname: string;
+  lname: string;
+  email: string;
+  role: number;
+}
+
+// Define a User interface
+interface User {
+  user_id: number;
+  email: string;
+  fname: string;
+  lname: string;
+  role: number;
+}

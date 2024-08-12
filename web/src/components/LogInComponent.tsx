@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
 import { loginUser } from "../api/userAPI";
 import { LoginUserData } from "../api/interfaces";
 import { fetchBooks } from "../store/bookSlice";
@@ -6,7 +7,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../store";
 
 interface LogInComponentProps {
-  // Define props here
   callback: () => void;
 }
 
@@ -19,6 +19,7 @@ const LogInComponent: React.FC<LogInComponentProps> = ({ callback }) => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,32 +29,39 @@ const LogInComponent: React.FC<LogInComponentProps> = ({ callback }) => {
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-
+  
     if (!loginData.email || !loginData.password) {
       setError("Please fill out all fields.");
       return;
     }
-
+  
     console.log("Login data being sent:", loginData);
     setIsLoading(true);
-
+  
     try {
       const response = await loginUser(loginData);
       console.log("Login successful:", response);
-      callback();
-      dispatch(
-        fetchBooks({
-          title: "",
-          limit: limit,
-          offset: offset,
-        })
-      );
+      
+      // Check if the user is an admin
+      if (response.user_info.role === 1) {
+        navigate("/admin"); // Redirect to AdminPage
+      } else {
+        callback();
+        dispatch(
+          fetchBooks({
+            title: "",
+            limit: limit,
+            offset: offset,
+          })
+        );
+      }
     } catch (err) {
       setError("Login failed. Please check your credentials and try again.");
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   return (
     <div className="bg-[#101936] p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">

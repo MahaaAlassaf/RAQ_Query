@@ -6,7 +6,7 @@ class User(BaseModel):
     lname: str
     email: str
     password: str
-    role: int = Field(default=0)  # Set default value for role
+    role: int 
 
 
 class UserUpdateCurrent(BaseModel):
