@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { jwtDecode } from "jwt-decode"; 
+import jwtDecode from "jwt-decode";  // Correctly import jwtDecode
 import LogInComponent from "./LogInComponent";
 import SignUpComponent from "./SignUpComponent";
 import { logoutUser } from "../api/userAPI";
+
 
 const DropdownWithIcon: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,7 +17,7 @@ const DropdownWithIcon: React.FC = () => {
     const userInfo = localStorage.getItem("user_info");
 
     if (token && userInfo) {
-      const decodedToken: any = jwtDecode(token); 
+      const decodedToken: any = jwtDecode(token);
       const currentTime = Date.now() / 1000;
 
       // Check if token is expired
@@ -52,7 +53,6 @@ const DropdownWithIcon: React.FC = () => {
     setIsLogged(false);
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_info");
-    // force refresh to update the UI
     window.location.reload();
     setIsOpen(false);
   };

@@ -6,6 +6,7 @@ from app.database.schemas.books import Book
 from app.database.schemas.user import User
 from app.database.schemas.author import Author
 from app.database.schemas.book_author_association import book_author_association
+from app.schemas import book
 from app.services.author_services import retrieve_single_author
 from app.schemas.book import BookUpdateCurrent
 
@@ -116,22 +117,20 @@ def search_books_by_title(session: Session, title: str, limit: int, offset: int,
         print(f"Error searching books: {e}")
         return False, str(e), []
 
-def delete_book_from_db(book_id):
+def delete_book_from_db(db: Session, book_id: int):
     try:
-        engine, session = connect_to_db()
-        with session.begin():
-            stmt = delete(Book).where(Book.id == book_id)
-            result = session.execute(stmt)
-            if result.rowcount > 0:
-                return True, "Book deleted successfully" 
-            else:
-                return False, "Book could not be deleted"
+        book = db.query(Book).filter(Book.id == book_id).first()
+        
+        if not book:
+            return False, "Book not found"
+        
+        db.delete(book)
+        db.commit()
+        
+        return True, "Book deleted successfully"
     except Exception as e:
-        print(e)
-        session.rollback()
-        return False, e
-    finally:
-        session.close()
+        db.rollback() 
+        return False, str(e)
 
 def add_book_to_db(session: Session,book: Book):
     success, message, author = retrieve_single_author(book.author_id)
@@ -156,7 +155,8 @@ def add_book_to_db(session: Session,book: Book):
         return False, e, None
     finally:
         session.close()
-        
+
+
 def edit_book_info(book_id: int, new_book: BookUpdateCurrent):
     success, message, book = retrieve_single_book(book_id)
     if not success:
@@ -246,3 +246,26 @@ def remove_from_favourites(db: Session, email: str, book_id: int):
     db.commit()
 
     return True, "Book removed from favorites"
+
+def retrieve_all_books(db: Session):
+    books = db.query(Book).all()
+    
+    # Fetch authors for each book
+    result = []
+    for book in books:
+        authors = [author.name for author in book.authors]
+        result.append({
+            "id": book.id,
+            "title": book.title,
+            "subtitle": book.subtitle,
+            "thumbnail": book.thumbnail,
+            "genre": book.genre,
+            "published_year": book.published_year,
+            "description": book.description,
+            "average_rating": book.average_rating,
+            "num_pages": book.num_pages,
+            "ratings_count": book.ratings_count,
+            "authors": authors  # Include authors
+        })
+    
+    return result

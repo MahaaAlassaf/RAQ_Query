@@ -1,5 +1,6 @@
 from sqlalchemy import select, update
 from app.database.connector import connect_to_db
+from app.database.schemas.books import Book
 from app.database.schemas.user import User
 from app.utils.hash import deterministic_hash
 from sqlalchemy.orm import Session
@@ -116,10 +117,6 @@ def delete_user(db: Session, email: str):
     db.commit()
     return True, "User deleted successfully"
 
-
-
 def retrieve_all_users(db: Session):
     users = db.query(User).all()
     return [{"email": user.email, "fname": user.fname, "lname": user.lname, "role": user.role} for user in users]
-
-

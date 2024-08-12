@@ -4,13 +4,11 @@ import { RegisterUserData, LoginUserData, LoginResponse, UserResponse, Book } fr
 // Register a new user
 export const registerUser = async (userData: RegisterUserData) => {
   try {
-    console.log(userData); // Check the structure and content
     const response = await axiosInstance.post("/users/register", userData);
     return response.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.detail ||
-      "An unexpected error occurred during registration"
+      error.response?.data?.detail || "An unexpected error occurred during registration"
     );
   }
 };
@@ -23,19 +21,16 @@ export const loginUser = async (loginData: LoginUserData) => {
       loginData
     );
 
-    // Save the token and user info to local storage
     localStorage.setItem("access_token", response.data.access_token);
     localStorage.setItem("user_info", JSON.stringify(response.data.user_info));
 
     return response.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.detail ||
-      "An unexpected error occurred during login"
+      error.response?.data?.detail || "An unexpected error occurred during login"
     );
   }
 };
-
 
 // Log out the user
 export const logoutUser = () => {
@@ -57,7 +52,9 @@ export const getAllUsers = async (): Promise<UserResponse[]> => {
 
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'An unexpected error occurred while fetching users');
+    throw new Error(
+      error.response?.data?.detail || 'An unexpected error occurred while fetching users'
+    );
   }
 };
 
@@ -73,19 +70,26 @@ export const deleteUser = async (userEmail: string): Promise<void> => {
       },
     });
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'An unexpected error occurred while deleting the user');
+    throw new Error(
+      error.response?.data?.detail || 'An unexpected error occurred while deleting the user'
+    );
   }
 };
-
 
 // Add a new book (admin only)
 export const adminAddBook = async (bookData: Book): Promise<void> => {
   try {
-    await axiosInstance.post("/admin/books", bookData);
+    const token = localStorage.getItem('access_token');
+    if (!token) throw new Error('No token found');
+
+    await axiosInstance.post('/admin/books', bookData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.detail ||
-      "An unexpected error occurred while adding the book"
+      error.response?.data?.detail || 'An unexpected error occurred while adding the book'
     );
   }
 };
@@ -93,11 +97,17 @@ export const adminAddBook = async (bookData: Book): Promise<void> => {
 // Delete a book (admin only)
 export const adminDeleteBook = async (bookId: number): Promise<void> => {
   try {
-    await axiosInstance.delete(`/admin/books/${bookId}`);
+    const token = localStorage.getItem('access_token');
+    if (!token) throw new Error('No token found');
+
+    await axiosInstance.delete(`/admin/books/${bookId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.detail ||
-      "An unexpected error occurred while deleting the book"
+      error.response?.data?.detail || 'An unexpected error occurred while deleting the book'
     );
   }
 };

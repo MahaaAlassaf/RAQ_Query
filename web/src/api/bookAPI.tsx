@@ -1,6 +1,6 @@
 // src/api/bookAPI.tsx
 import axiosInstance from "./config";
-import { GetBooksResponse, GetBookByIdResponse } from "./interfaces";
+import { GetBooksResponse, GetBookByIdResponse, BooksResponse } from "./interfaces";
 
 export const getBooks = async (
   title: string = "",
@@ -16,6 +16,16 @@ export const getBooks = async (
       },
     });
 
+    return response.data;
+  } catch (error) {
+    throw new Error(`Failed to fetch books: ${(error as Error).message}`);
+  }
+};
+
+// Fetch all books
+export const getAllBooks = async (): Promise<BooksResponse> => {
+  try {
+    const response = await axiosInstance.get<BooksResponse>("/admin/books");
     return response.data;
   } catch (error) {
     throw new Error(`Failed to fetch books: ${(error as Error).message}`);
@@ -60,3 +70,10 @@ export const removeBookFromFavorites = async (
 };
 
 
+export const deleteBook = async (bookId: number): Promise<void> => {
+  try {
+    await axiosInstance.delete(`/books/${bookId}`);
+  } catch (error) {
+    throw new Error(`Failed to delete book: ${(error as Error).message}`);
+  }
+};

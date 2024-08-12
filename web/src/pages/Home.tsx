@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchBooks, setLimit, setOffset } from "../store/bookSlice";
+import { fetchBooks, setOffset } from "../store/bookSlice";
 import { RootState, AppDispatch } from "../store";
 import { Loading as Spinner } from "../components/Loading";
 import Search from "../components/Search";
@@ -26,7 +26,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchBooks({ title, limit, offset }));
-  }, [dispatch, limit, offset]);
+  }, [dispatch, title, limit, offset]);  // Included `title`  
 
   const handleNextPage = () => dispatch(setOffset(offset + limit));
   const handlePreviousPage = () =>

@@ -1,5 +1,5 @@
 // src/components/BookDetails.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { UnknownAction } from "@reduxjs/toolkit";
 import { fetchBookById } from "../store/bookSlice";
@@ -16,7 +16,7 @@ const BookDetails: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchBookById(id) as unknown as UnknownAction);
-  }, [id]);
+  }, [dispatch, id]);  // Corrected dependencies
 
   if (loading)
     return (
@@ -33,7 +33,7 @@ const BookDetails: React.FC = () => {
         />
       </div>
     );
-    
+
   if (error) {
     return (
       <div className="h-screen flex justify-center items-center bg-red-500">

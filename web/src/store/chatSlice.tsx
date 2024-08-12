@@ -1,7 +1,5 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import { sendMessage } from "../api/chatAPI";
-import { ChatResponse } from "../api/interfaces";
-import { stat } from "fs";
 
 interface ChatState {
   response: string;
