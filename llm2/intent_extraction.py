@@ -19,17 +19,21 @@ class IntentExtractor:
         self.llm = OllamaLLM(model=model_name)
         print(f"Loaded model: {model_name}")
 
+    # def clear_memory(self):
+    #     if hasattr(memory.chat_memory, 'clear'):
+    #         memory.chat_memory.clear()  
+    #         print("Chat memory has been cleared!")
+    #     else:
+    #         print("No method to clear chat memory directly.")
+
     def classify_intent_and_extract_entities(self, document: str) -> IntentResponseModel:
         memory.chat_memory.add_user_message(document)
 
-        # Regex to capture numbers in the user's input
         number_pattern = re.compile(r'\b(\d+)\b')
         number_match = number_pattern.search(document)
         
-        # Default to 2 recommendations if no number is specified
         num_recommendations = int(number_match.group(1)) if number_match else 2
 
-        # Construct the prompt including conversation history
         prompt_message = HumanMessage(
             content=(
                 f"""
@@ -96,3 +100,8 @@ class IntentExtractor:
             print(f"Error parsing response: {e}")
             # Re-invoke the model if validation fails
             return self.classify_intent_and_extract_entities(document)
+
+
+# if __name__ == "__main__":
+#     extractor = IntentExtractor(model_name="llama3.1")
+#     extractor.clear_memory() 

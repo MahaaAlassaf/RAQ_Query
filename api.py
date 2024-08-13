@@ -7,7 +7,7 @@ from requests import Session
 from app.database.connector import connect_to_db, get_db
 from app.middleware.request_logger import setup_middleware
 from llm2.langgraph_integration import app as langgraph_app
-# Import necessary services and modules
+
 from app.database.schemas.query import Query
 from app.services.author_services import (
     retrieve_single_author,
@@ -75,9 +75,54 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-# Add custom middleware
 setup_middleware(app)
 
+@app.post("/users/register")
+def add_user(user: User):
+    print("Received user data:", user)
+    success, message = register_user(user)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": message, "user": user.email}
+
+@app.post("/users/login")
+async def auth_user(login_data: Login, db: Session = Depends(get_db)):
+    # Unpack the three values returned by authenticate_user
+    auth, message, user_info = authenticate_user(login_data.email, login_data.password, db)
+    
+    if not auth:
+        raise HTTPException(status_code=401, detail=message)
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"email": user_info["email"], "role": user_info["role"]}, 
+        expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_info": user_info
+    }
+
+@app.get("/users/me")
+def get_user(current_user: dict = test_user):
+    return {"user": current_user}
+
+@app.put("/users/me")
+async def update_user(user_update: UserUpdateCurrent, current_user: dict = test_user):
+    email = current_user["email"]
+    success, message = edit_user_info(email, user_update)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    success, message, user = retrieve_single_user(email)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user}, expires_delta=access_token_expires
+    )
+    return {"message": message, "token": access_token}
+
+# Books
 @app.get("/books")
 def get_books(
     db: Session = Depends(get_db),
@@ -160,6 +205,37 @@ def remove_book_from_favorites(request: FavoriteRequest,
         raise HTTPException(status_code=500, detail=message)
     return {"message": message, "book_id": book_id, "user_email": user_email}
 
+# Chat and recom ssumm
+@app.post("/query")
+async def query_books(query: Query):
+    description = query.description
+    if not description:
+        raise HTTPException(status_code=400, detail="Description is required.")
+
+    db_session = connect_to_db()
+
+    intent_extractor = IntentExtractor()
+    intent_response = intent_extractor.classify_intent_and_extract_entities(description)
+    intent_number = intent_response.intent_number
+    entity_name = intent_response.entity_name
+
+    try:
+        if intent_number and entity_name:
+            initial_state = {"question": description, "intent_number": intent_number, "entity_name": entity_name}
+
+            # Run the compiled workflow with the initial state
+            response_state = app.invoke(initial_state)
+
+            response = response_state.get('response', 'No response generated.')
+            return {"response": response}
+        else:
+            return {"response": "Could not determine intent or entity from the description."}
+    except Exception as e:
+        print(f"Error processing query: {str(e)}")
+        return {"response": f"Error processing query: {str(e)}"}
+    finally:
+        db_session.close()
+
 @app.get("/chat")
 def chat_with_bot(query: str):
     model_input = {
@@ -173,27 +249,19 @@ def chat_with_bot(query: str):
         print(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.post("/books")
-def add_book(book: Book, current_user: dict = test_user):
-    success, message, book_id = add_book_to_db(book)
-    if not success:
-        raise HTTPException(status_code=400, detail=message)
-    return {"message": message, "book_id": book_id}
+@app.post("/recommendations")
+def get_recommendations(description: str):
+    try:
+        similar_books_metadata = similarity_text(description)
+        if not similar_books_metadata:
+            raise HTTPException(status_code=404, detail="No recommendations found")
 
-@app.put("/books/{book_id}")
-def update_book(book_id: int, new_book: BookUpdateCurrent, current_user: dict = test_user):
-    success, message = edit_book_info(book_id, new_book)
-    if not success:
-        raise HTTPException(status_code=400, detail=message)
-    return {"message": message, "book_id": book_id}
-
-@app.delete("/books/{book_id}")
-def delete_book_route(book_id: int, current_user: dict = test_user):
-    success, message = delete_book_from_db(book_id)
-    if not success:
-        raise HTTPException(status_code=400, detail=message)
-    return {"message": message, "book": book_id}
-
+        book_recommendations = [book['title'] for book in similar_books_metadata]
+        return {"message": "Recommendations fetched successfully", "book_recommendations": book_recommendations}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+# Authors
 @app.get("/authors")
 def get_authors(current_user: dict = test_user):
     return retrieve_authors_from_db()
@@ -226,131 +294,7 @@ def delete_author(author_id: int, current_user: dict = test_user):
         raise HTTPException(status_code=400, detail=message)
     return {"message": message, "author_id": author_id}
 
-@app.post("/users/register")
-def add_user(user: User):
-    print("Received user data:", user)
-    success, message = register_user(user)
-    if not success:
-        raise HTTPException(status_code=400, detail=message)
-    return {"message": message, "user": user.email}
-
-@app.post("/users/login")
-async def auth_user(login_data: Login, db: Session = Depends(get_db)):
-    # Unpack the three values returned by authenticate_user
-    auth, message, user_info = authenticate_user(login_data.email, login_data.password, db)
-    
-    if not auth:
-        raise HTTPException(status_code=401, detail=message)
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"email": user_info["email"], "role": user_info["role"]}, 
-        expires_delta=access_token_expires
-    )
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user_info": user_info
-    }
-
-@app.get("/users/me")
-def get_user(current_user: dict = test_user):
-    return {"user": current_user}
-
-@app.put("/users/me")
-async def update_user(user_update: UserUpdateCurrent, current_user: dict = test_user):
-    email = current_user["email"]
-    success, message = edit_user_info(email, user_update)
-    if not success:
-        raise HTTPException(status_code=400, detail=message)
-    success, message, user = retrieve_single_user(email)
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user}, expires_delta=access_token_expires
-    )
-    return {"message": message, "token": access_token}
-
-@app.post("/query")
-async def query_books(query: Query):
-    # Validate and extract the query description
-    description = query.description
-    if not description:
-        raise HTTPException(status_code=400, detail="Description is required.")
-
-    # Initialize the database session
-    db_session = connect_to_db()
-
-    # Extract intent and entity
-    intent_extractor = IntentExtractor()
-    intent_response = intent_extractor.classify_intent_and_extract_entities(description)
-    intent_number = intent_response.intent_number
-    entity_name = intent_response.entity_name
-
-    try:
-        if intent_number and entity_name:
-            initial_state = {"question": description, "intent_number": intent_number, "entity_name": entity_name}
-
-            # Run the compiled workflow with the initial state
-            response_state = app.invoke(initial_state)
-
-            response = response_state.get('response', 'No response generated.')
-            return {"response": response}
-        else:
-            return {"response": "Could not determine intent or entity from the description."}
-    except Exception as e:
-        print(f"Error processing query: {str(e)}")
-        return {"response": f"Error processing query: {str(e)}"}
-    finally:
-        db_session.close()
-
-@app.post("/recommendations")
-def get_recommendations(description: str):
-    try:
-        similar_books_metadata = similarity_text(description)
-        if not similar_books_metadata:
-            raise HTTPException(status_code=404, detail="No recommendations found")
-
-        book_recommendations = [book['title'] for book in similar_books_metadata]
-        return {"message": "Recommendations fetched successfully", "book_recommendations": book_recommendations}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/healthcheck")
-def health_check():
-    return {"status": "healthy"}
-
-@app.post("/favorites/{book_id}")
-def add_favorite(book_id: int, current_user: dict = test_user, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == current_user["email"]).first()
-    book = db.query(User).filter(User.id == book_id).first()
-
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    if book not in user.favorite_books:
-        user.favorite_books.append(book)
-        db.commit()
-        return {"message": "Book added to favorites"}
-    else:
-        return {"message": "Book is already in favorites"}
-
-@app.delete("/favorites/{book_id}")
-def remove_favorite(book_id: int, current_user: dict = test_user, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == current_user["email"]).first()
-    book = db.query(User).filter(User.id == book_id).first()
-
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    if book in user.favorite_books:
-        user.favorite_books.remove(book)
-        db.commit()
-        return {"message": "Book removed from favorites"}
-    else:
-        return {"message": "Book is not in favorites"}
-
-#-----------------------------------------------------------------------------------
+# Admin
 @app.get("/admin/users")
 def get_all_users(db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
     payload = verify_token(token)
@@ -381,6 +325,7 @@ def get_all_books(db: Session = Depends(get_db), token: str = Security(oauth2_sc
     books = retrieve_all_books(db)
     return {"message": "Books fetched successfully", "books": books}
 
+
 @app.delete("/admin/books/{book_id}")
 def admin_delete_book(book_id: int, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
     payload = verify_token(token)
@@ -392,6 +337,23 @@ def admin_delete_book(book_id: int, db: Session = Depends(get_db), token: str = 
         raise HTTPException(status_code=400, detail=message)
     return {"message": "Book deleted successfully"}
 
+# @app.post("/books")
+# def add_book(book: Book, current_user: dict = test_user):
+#     success, message, book_id = add_book_to_db(book)
+#     if not success:
+#         raise HTTPException(status_code=400, detail=message)
+#     return {"message": message, "book_id": book_id}
+
+# @app.put("/books/{book_id}")
+# def update_book(book_id: int, new_book: BookUpdateCurrent, current_user: dict = test_user):
+#     success, message = edit_book_info(book_id, new_book)
+#     if not success:
+#         raise HTTPException(status_code=400, detail=message)
+#     return {"message": message, "book_id": book_id}
+
+@app.get("/healthcheck")
+def health_check():
+    return {"status": "healthy"}
 
 # run the server
 if __name__ == "__main__":

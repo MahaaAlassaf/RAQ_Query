@@ -70,14 +70,6 @@ export interface UserResponse {
   role: number;
 }
 
-interface User {
-  user_id: number;
-  email: string;
-  fname: string;
-  lname: string;
-  role: number;
-}
-
 export interface BooksResponse {
   message: string;
   books: Book[];

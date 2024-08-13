@@ -1,16 +1,14 @@
-# from fastapi import HTTPException, Header
-# from typing import Annotated
-# from fastapi import HTTPException, Security, Depends
-# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-# from app.services.token_services import verify_token
+# # app/api/get_current_user.py
+# from fastapi import HTTPException, Security
+# from fastapi.security import OAuth2PasswordBearer
+# from app.services.token_services import TokenService
 
-# security = HTTPBearer()
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-#     token = credentials.credentials
-#     user = verify_token(token)
-#     if not user:
-#         raise HTTPException(status_code=403, detail="Invalid token")
-#     return user
-
-
+# class BaseAPIHandler:
+#     @staticmethod
+#     def get_current_user(token: str = Security(oauth2_scheme), required_role: str = None):
+#         payload = TokenService.verify_token(token)
+#         if required_role and payload.get("role") != required_role:
+#             raise HTTPException(status_code=403, detail="Insufficient privileges")
+#         return payload
