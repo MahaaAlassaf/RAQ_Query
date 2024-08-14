@@ -73,7 +73,7 @@ def retrieve_books_from_db(session: Session, limit: int, offset: int, email: str
                 "num_pages": book.num_pages,
                 "ratings_count": book.ratings_count,
                 "authors": [author.name for author in book.authors],
-                "is_fav": book.id in favorite_books_ids  # Check if the book is in the user's favorites
+                "is_fav": book.id in favorite_books_ids 
             }
             for book in books
         ]
@@ -87,7 +87,6 @@ def search_books_by_title(session: Session, title: str, limit: int, offset: int,
     try:
         books = session.query(Book).filter(Book.title.ilike(f'%{title}%')).offset(offset).limit(limit).all()
         
-        # Retrieve the user's favorite books if email is provided
         favorite_books_ids = []
         if email:
             user = session.query(User).filter(User.email == email).first()
@@ -107,7 +106,7 @@ def search_books_by_title(session: Session, title: str, limit: int, offset: int,
                 "num_pages": book.num_pages,
                 "ratings_count": book.ratings_count,
                 "authors": [author.name for author in book.authors],
-                "is_fav": book.id in favorite_books_ids  # Check if the book is in the user's favorites
+                "is_fav": book.id in favorite_books_ids  
             }
             for book in books
         ]
@@ -250,7 +249,6 @@ def remove_from_favourites(db: Session, email: str, book_id: int):
 def retrieve_all_books(db: Session):
     books = db.query(Book).all()
     
-    # Fetch authors for each book
     result = []
     for book in books:
         authors = [author.name for author in book.authors]
@@ -265,7 +263,7 @@ def retrieve_all_books(db: Session):
             "average_rating": book.average_rating,
             "num_pages": book.num_pages,
             "ratings_count": book.ratings_count,
-            "authors": authors  # Include authors
+            "authors": authors  
         })
     
     return result

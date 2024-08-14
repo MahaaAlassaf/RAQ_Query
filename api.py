@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
+from grpc import Status
 from pydantic import BaseModel
 from typing import Dict
 from datetime import timedelta
@@ -162,26 +163,24 @@ def get_book(book_id: int, db: Session = Depends(get_db), current_user: dict = t
     return {"message": message, "book": book}
 
 @app.post("/books/add_to_favorites")
-def add_book_to_favorites(request: FavoriteRequest,
-                          db: Session = Depends(get_db),
-                          token: str = Security(oauth2_scheme)):
-    book_id = request.book_id
-    if token:
-        print("Token received:", token)
-        try:
-            payload = verify_token(token)
-            user_email = payload.get("email")
-            if user_email is None:
-                raise HTTPException(status_code=401, detail="Invalid token payload")
-            print(f"Authenticated user: {user_email}")
-        except JWTError:
-            raise HTTPException(status_code=401, detail="Token verification failed")
-    else:
-        raise HTTPException(status_code=401, detail="Token is required to add book to favorites")
-    success, message = add_to_favourites(db, user_email, book_id)
-    if not success:
-        raise HTTPException(status_code=500, detail=message)
-    return {"message": message, "book_id": book_id, "user_email": user_email}
+def add_book_to_favorites(request: FavoriteRequest, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
+    try:
+        payload = verify_token(token)
+        user_email = payload.get("email")
+        if not user_email:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+        
+        success, message = add_to_favourites(db, user_email, request.book_id)
+        if not success:
+            raise HTTPException(status_code=500, detail=message)
+        
+        return {"message": message, "book_id": request.book_id, "user_email": user_email}
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Token verification failed")
+    except Exception as e:
+        print(f"Error adding book to favorites: {str(e)}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+
 
 @app.post("/books/remove_from_favorites")
 def remove_book_from_favorites(request: FavoriteRequest,
@@ -299,10 +298,12 @@ def delete_author(author_id: int, current_user: dict = test_user):
 def get_all_users(db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
     payload = verify_token(token)
     if payload.get("role") != 1: 
-        raise HTTPException(status_code=403, detail="Admin privileges required.")
-    
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,  
+            detail="You do not have permission to view this resource. Contact admin if you believe this is a mistake."
+        )
     users = retrieve_all_users(db)
-    return users 
+    return users
 
 @app.delete("/admin/users/{email}")
 def remove_user(email: str, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
@@ -314,7 +315,6 @@ def remove_user(email: str, db: Session = Depends(get_db), token: str = Security
     if not success:
         raise HTTPException(status_code=400, detail=message)
     return {"message": "User deleted successfully"}
-
 
 @app.get("/admin/books")
 def get_all_books(db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
@@ -337,12 +337,19 @@ def admin_delete_book(book_id: int, db: Session = Depends(get_db), token: str = 
         raise HTTPException(status_code=400, detail=message)
     return {"message": "Book deleted successfully"}
 
-# @app.post("/books")
-# def add_book(book: Book, current_user: dict = test_user):
-#     success, message, book_id = add_book_to_db(book)
-#     if not success:
-#         raise HTTPException(status_code=400, detail=message)
-#     return {"message": message, "book_id": book_id}
+@app.post("/books")
+def admin_add_book(book: Book, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
+    # Verify the token and check if the user is an admin
+    user_payload = verify_token(token)
+    if user_payload.get("role") != 1:
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+
+    success, message, book_id = add_book_to_db(db, book)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return {"message": message, "book_id": book_id}
+
+
 
 # @app.put("/books/{book_id}")
 # def update_book(book_id: int, new_book: BookUpdateCurrent, current_user: dict = test_user):

@@ -1,7 +1,12 @@
-// src/api/config.tsx
-import axios from "axios";
+import axios from 'axios';
 
 const baseURL = "http://localhost:6969/";
+
+const validateToken = (token: string | null): void => { 
+  if (!token) {
+    throw new Error("No token provided");
+  }
+};
 
 const axiosInstance = axios.create({
   baseURL: baseURL,
@@ -10,31 +15,37 @@ const axiosInstance = axios.create({
   },
 });
 
-axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
-axios.defaults.xsrfCookieName = "csrftoken";
-
-// Request interceptor to add the token to headers
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
     if (token) {
+      validateToken(token); 
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-//  handling 400
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  response => response,
   (error) => {
-    if (error.response && error.response.status === 400) {
-      return Promise.reject(new Error(error.response.data.message));
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        const status = error.response.status;
+        if (status === 401 || status === 403) {
+          console.error("Invalid token:", error.message);
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("user_info");
+          window.location.href = 'http://localhost:3000/';
+        } else {
+          console.error(`Error: ${error.response.data.detail}`);
+        }
+      } else {
+        console.error("Network error:", error.message);
+      }
+    } else {
+      console.error("Unexpected error:", error);
     }
     return Promise.reject(error);
   }

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import jwtDecode from "jwt-decode";  // Correctly import jwtDecode
+import jwtDecode from "jwt-decode"; 
 import LogInComponent from "./LogInComponent";
 import SignUpComponent from "./SignUpComponent";
 import { logoutUser } from "../api/userAPI";
-
 
 const DropdownWithIcon: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +10,7 @@ const DropdownWithIcon: React.FC = () => {
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [isLogged, setIsLogged] = useState(false);
   const [userName, setUserName] = useState("");
+  const [logoutNotification, setLogoutNotification] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -22,7 +22,7 @@ const DropdownWithIcon: React.FC = () => {
 
       // Check if token is expired
       if (decodedToken.exp < currentTime) {
-        handleLogOut();
+        handleLogOut("Your session has expired. Please log in again.");
       } else {
         setIsLogged(true);
         const user = JSON.parse(userInfo || "{}");
@@ -48,9 +48,10 @@ const DropdownWithIcon: React.FC = () => {
     setShowSignupModal(false);
   };
 
-  const handleLogOut = () => {
+  const handleLogOut = (message: string) => {
     logoutUser();
     setIsLogged(false);
+    setLogoutNotification(message);
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_info");
     window.location.reload();
@@ -85,7 +86,7 @@ const DropdownWithIcon: React.FC = () => {
           {isLogged ? (
             <>
               <button
-                onClick={handleLogOut}
+                onClick={() => handleLogOut("You have logged out successfully.")}
                 className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
                 Log Out
               </button>
@@ -104,6 +105,11 @@ const DropdownWithIcon: React.FC = () => {
               </button>
             </>
           )}
+        </div>
+      )}
+      {logoutNotification && (
+        <div className="fixed bottom-4 right-4 bg-red-500 text-white p-2 rounded">
+          {logoutNotification}
         </div>
       )}
       {showLoginModal && (
