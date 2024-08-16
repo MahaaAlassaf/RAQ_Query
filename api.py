@@ -299,7 +299,7 @@ def get_all_users(db: Session = Depends(get_db), token: str = Security(oauth2_sc
     payload = verify_token(token)
     if payload.get("role") != 1: 
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,  
+            status_code=Status.HTTP_403_FORBIDDEN,  
             detail="You do not have permission to view this resource. Contact admin if you believe this is a mistake."
         )
     users = retrieve_all_users(db)
