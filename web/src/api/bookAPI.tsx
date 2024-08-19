@@ -1,6 +1,11 @@
 // src/api/bookAPI.tsx
 import axiosInstance from "./config";
-import { GetBooksResponse, GetBookByIdResponse, BooksResponse } from "./interfaces";
+import {
+  GetBooksResponse,
+  GetBookByIdResponse,
+  BooksResponse,
+  BookCreate,
+} from "./interfaces";
 
 export const getBooks = async (
   title: string = "",
@@ -69,11 +74,18 @@ export const removeBookFromFavorites = async (
   }
 };
 
-
 export const deleteBook = async (bookId: number): Promise<void> => {
   try {
     await axiosInstance.delete(`/books/${bookId}`);
   } catch (error) {
     throw new Error(`Failed to delete book: ${(error as Error).message}`);
+  }
+};
+
+export const createBook = async (book: BookCreate): Promise<void> => {
+  try {
+    await axiosInstance.post("/books", book);
+  } catch (error) {
+    throw new Error(`Failed to create book: ${(error as Error).message}`);
   }
 };

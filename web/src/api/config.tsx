@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
 const baseURL = "http://localhost:6969/";
 
-const validateToken = (token: string | null): void => { 
+const validateToken = (token: string | null): void => {
   if (!token) {
     throw new Error("No token provided");
   }
@@ -19,7 +19,7 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
     if (token) {
-      validateToken(token); 
+      validateToken(token);
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -28,7 +28,7 @@ axiosInstance.interceptors.request.use(
 );
 
 axiosInstance.interceptors.response.use(
-  response => response,
+  (response) => response,
   (error) => {
     if (axios.isAxiosError(error)) {
       if (error.response) {
@@ -37,7 +37,7 @@ axiosInstance.interceptors.response.use(
           console.error("Invalid token:", error.message);
           localStorage.removeItem("access_token");
           localStorage.removeItem("user_info");
-          window.location.href = 'http://localhost:3000/';
+          window.location.reload();
         } else {
           console.error(`Error: ${error.response.data.detail}`);
         }

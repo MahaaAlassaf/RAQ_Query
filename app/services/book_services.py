@@ -8,7 +8,7 @@ from app.database.schemas.author import Author
 from app.database.schemas.book_author_association import book_author_association
 from app.schemas import book
 from app.services.author_services import retrieve_single_author
-from app.schemas.book import BookUpdateCurrent
+from app.schemas.book import BookCreate, BookUpdateCurrent
 
 def insert_book(session: Session, title: str, genre: str, description: str, year: int):
     new_book = Book(title=title, genre=genre, description=description, year=year)
@@ -131,24 +131,33 @@ def delete_book_from_db(db: Session, book_id: int):
         db.rollback() 
         return False, str(e)
 
-def add_book_to_db(session: Session,book: Book):
-    success, message, author = retrieve_single_author(book.author_id)
-    if not success:
-        return success, message, None
-    
-    to_add = Book(
-        title=book.title, 
-        genre=book.genre, 
-        description=book.description, 
-        year=book.year, 
-        author_id=book.author_id
+def add_book_to_db(session: Session,book: BookCreate):
+    new_book = Book(
+        title=book.title,
+        subtitle=book.subtitle,
+        thumbnail=book.thumbnail,
+        genre=book.genre,
+        published_year=book.published_year,
+        description=book.description,
+        average_rating=book.average_rating,
+        num_pages=book.num_pages,
+        ratings_count=book.ratings_count,
     )
     
+    for author_data in book.authors:
+        author = session.query(Author).filter(Author.name == author_data.name).first()
+        if not author:
+            author = Author(name=author_data.name)
+            session.add(author)
+            session.commit()
+            session.refresh(author)
+        new_book.authors.append(author)
+        
     try:
-        session.add(to_add)
+        session.add(new_book)
         session.commit()
-        book_id = to_add.book_id
-        return True, "Book added Successfully", book_id
+        session.refresh(new_book)
+        return True, "Book added Successfully", new_book
     except Exception as e:
         session.rollback()
         return False, e, None

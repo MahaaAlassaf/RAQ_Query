@@ -4,8 +4,8 @@ import { fetchBooks, setOffset } from "../store/bookSlice";
 import { RootState, AppDispatch } from "../store";
 import { Loading as Spinner } from "../components/Loading";
 import Search from "../components/Search";
-import Chatbot from "../components/chatBot";
-import Book from "../components/book";
+import Chatbot from "../components/Chatbot";
+import Book from "../components/Book";
 import Error from "../components/Error";
 import Pagination from "../components/Pagination";
 import LogInSignUp from "../components/DropdownWithIcon";
@@ -26,7 +26,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchBooks({ title, limit, offset }));
-  }, [dispatch, title, limit, offset]);  // Included `title`  
+  }, [dispatch, limit, offset]);
 
   const handleNextPage = () => dispatch(setOffset(offset + limit));
   const handlePreviousPage = () =>

@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
+import jwtDecode from "jwt-decode";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchBooks, setLimit } from "../store/bookSlice";
+import { fetchBooks, setLimit, setBooks } from "../store/bookSlice";
 import { RootState, AppDispatch } from "../store";
+import HeartIcon from "./HeartIcon";
 
 interface SearchProps {
   title: string;
@@ -11,6 +13,17 @@ interface SearchProps {
 const Search: React.FC<SearchProps> = ({ title, setTitle }) => {
   const dispatch = useDispatch<AppDispatch>();
   const limit = useSelector((state: RootState) => state.books.limit);
+  const books = useSelector((state: RootState) => state.books.books);
+  const [isLogged, setIsLogged] = React.useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    const userInfo = localStorage.getItem("user_info");
+
+    if (token && userInfo) {
+      setIsLogged(true);
+    }
+  }, []);
 
   const handlePerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newLimit = Number(event.target.value);
@@ -20,6 +33,17 @@ const Search: React.FC<SearchProps> = ({ title, setTitle }) => {
 
   const handleSearch = () => {
     dispatch(fetchBooks({ title, limit, offset: 0 }));
+  };
+
+  const [showingFav, setShowingFav] = React.useState(false);
+
+  const handleFavClick = () => {
+    if (showingFav) {
+      dispatch(fetchBooks({ title, limit, offset: 0 }));
+    } else {
+      dispatch(setBooks(books.filter((book) => book.is_fav)));
+    }
+    setShowingFav(!showingFav);
   };
 
   return (
@@ -79,6 +103,15 @@ const Search: React.FC<SearchProps> = ({ title, setTitle }) => {
         </button>
       </div>
       <div className="flex justify-end items-center w-2/6">
+        {isLogged && (
+          <button onClick={handleFavClick}>
+            <HeartIcon
+              isActive={showingFav}
+              onClick={() => {}}
+              className="mr-4"
+            />
+          </button>
+        )}
         <label htmlFor="perPage" className="text-white mr-2">
           Results Per Page:
         </label>

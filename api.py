@@ -39,7 +39,7 @@ from app.services.book_services import (
 from app.services.token_services import create_access_token
 from app.schemas.login_info import Login
 from app.schemas.author import Author, AuthorUpdateCurrent
-from app.schemas.book import BookUpdateCurrent, Book
+from app.schemas.book import BookCreate, BookUpdateCurrent, Book
 from app.schemas.user import User, UserUpdateCurrent
 from app.utils.config import ACCESS_TOKEN_EXPIRE_MINUTES
 
@@ -89,10 +89,14 @@ def add_user(user: User):
 @app.post("/users/login")
 async def auth_user(login_data: Login, db: Session = Depends(get_db)):
     # Unpack the three values returned by authenticate_user
-    auth, message, user_info = authenticate_user(login_data.email, login_data.password, db)
+    auth, message, _ = authenticate_user(login_data.email, login_data.password, db)
     
     if not auth:
         raise HTTPException(status_code=401, detail=message)
+    
+    success, message, user_info = retrieve_single_user(login_data.email, db)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -338,16 +342,16 @@ def admin_delete_book(book_id: int, db: Session = Depends(get_db), token: str = 
     return {"message": "Book deleted successfully"}
 
 @app.post("/books")
-def admin_add_book(book: Book, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
+def admin_add_book(book: BookCreate, db: Session = Depends(get_db), token: str = Security(oauth2_scheme)):
     # Verify the token and check if the user is an admin
     user_payload = verify_token(token)
     if user_payload.get("role") != 1:
         raise HTTPException(status_code=403, detail="Admin privileges required.")
 
-    success, message, book_id = add_book_to_db(db, book)
+    success, message, book = add_book_to_db(db, book)
     if not success:
         raise HTTPException(status_code=400, detail=message)
-    return {"message": message, "book_id": book_id}
+    return {"message": message, "book": book}
 
 
 

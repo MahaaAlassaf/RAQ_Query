@@ -2,13 +2,17 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../api/userAPI";
 import { LoginUserData } from "../api/interfaces";
+import { setLogged, setIsAdmin, setToken } from "../store/authSlice";
 
 interface LogInComponentProps {
   callback: () => void;
 }
 
 const LogInComponent: React.FC<LogInComponentProps> = ({ callback }) => {
-  const [loginData, setLoginData] = useState<LoginUserData>({ email: "", password: "" });
+  const [loginData, setLoginData] = useState<LoginUserData>({
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -33,11 +37,16 @@ const LogInComponent: React.FC<LogInComponentProps> = ({ callback }) => {
       const response = await loginUser(loginData);
 
       if (response.user_info.role === 1) {
+        setIsAdmin(true);
+        console.log("Admin login successful");
         navigate("/admin");
       } else {
-        callback();  // Close the modal
+        callback(); // Close the modal
         navigate("/");
+        window.location.reload();
       }
+      setToken(response.access_token);
+      setLogged(true);
     } catch (err) {
       setError("Login failed. Please check your credentials and try again.");
     } finally {
@@ -53,7 +62,9 @@ const LogInComponent: React.FC<LogInComponentProps> = ({ callback }) => {
       {error && <p className="text-red-500 mb-2">{error}</p>}
       <form onSubmit={handleLogin} className="space-y-6">
         <div>
-          <label className="block text-white mb-1" htmlFor="email">Email</label>
+          <label className="block text-white mb-1" htmlFor="email">
+            Email
+          </label>
           <input
             id="email"
             type="email"
@@ -66,7 +77,9 @@ const LogInComponent: React.FC<LogInComponentProps> = ({ callback }) => {
           />
         </div>
         <div>
-          <label className="block text-white mb-1" htmlFor="password">Password</label>
+          <label className="block text-white mb-1" htmlFor="password">
+            Password
+          </label>
           <input
             id="password"
             type="password"
@@ -80,7 +93,9 @@ const LogInComponent: React.FC<LogInComponentProps> = ({ callback }) => {
         </div>
         <button
           type="submit"
-          className={`w-full py-3 text-[#101936] font-bold rounded transition duration-200 ${isLoading ? "bg-gray-400" : "bg-[#41D0C8] hover:bg-[#37b2aa]"}`}
+          className={`w-full py-3 text-[#101936] font-bold rounded transition duration-200 ${
+            isLoading ? "bg-gray-400" : "bg-[#41D0C8] hover:bg-[#37b2aa]"
+          }`}
           disabled={isLoading}>
           {isLoading ? "Loading..." : "Log In"}
         </button>

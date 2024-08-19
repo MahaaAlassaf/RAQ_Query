@@ -74,3 +74,16 @@ export interface BooksResponse {
   message: string;
   books: Book[];
 }
+
+export interface BookCreate {
+  title: string;
+  subtitle: string;
+  thumbnail: string;
+  genre: string;
+  published_year: number;
+  description: string;
+  average_rating: number;
+  num_pages: number;
+  ratings_count: number;
+  authors: { name: string }[];
+}

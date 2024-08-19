@@ -48,6 +48,9 @@ const bookSlice = createSlice({
     setOffset: (state, action) => {
       state.offset = action.payload;
     },
+    setBooks: (state, action) => {
+      state.books = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -78,5 +81,5 @@ const bookSlice = createSlice({
   },
 });
 
-export const { setLimit, setOffset } = bookSlice.actions;
+export const { setLimit, setOffset, setBooks } = bookSlice.actions;
 export default bookSlice.reducer;

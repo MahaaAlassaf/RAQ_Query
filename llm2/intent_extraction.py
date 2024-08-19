@@ -1,4 +1,5 @@
 import re
+import json
 from langchain_ollama import OllamaLLM
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field, ValidationError
@@ -14,24 +15,39 @@ class IntentResponseModel(BaseModel):
 
 memory = ConversationBufferMemory(memory_key="chat_history")
 
+# Function to save chat history to a file
+def save_chat_history(memory):
+    try:
+        history = memory.load_memory_variables({})
+        with open('chat_history.json', 'w') as file:
+            json.dump(history, file, indent=4)
+    except Exception as e:
+        print(f"Error saving chat history: {e}")
+
+def load_chat_history(memory):
+    try:
+        with open('chat_history.json', 'r') as file:
+            history = json.load(file)
+            memory.chat_memory.add_user_message(history['chat_history'])
+    except FileNotFoundError:
+        print("No previous history found.")
+    except json.JSONDecodeError:
+        print("Error decoding JSON from chat history.")
+    except Exception as e:
+        print(f"Error loading chat history: {e}")
+
+
 class IntentExtractor:
     def __init__(self, model_name="llama3.1"):
         self.llm = OllamaLLM(model=model_name)
         print(f"Loaded model: {model_name}")
-
-    # def clear_memory(self):
-    #     if hasattr(memory.chat_memory, 'clear'):
-    #         memory.chat_memory.clear()  
-    #         print("Chat memory has been cleared!")
-    #     else:
-    #         print("No method to clear chat memory directly.")
+        load_chat_history(memory) 
 
     def classify_intent_and_extract_entities(self, document: str) -> IntentResponseModel:
         memory.chat_memory.add_user_message(document)
 
         number_pattern = re.compile(r'\b(\d+)\b')
         number_match = number_pattern.search(document)
-        
         num_recommendations = int(number_match.group(1)) if number_match else 2
 
         prompt_message = HumanMessage(
@@ -55,20 +71,22 @@ class IntentExtractor:
                 3. Summarize Book: User asking for a concise and accurate summary of a book's content, highlighting key themes and plot points.
                 Example Query: "Tell me about the [book title] book."
 
-                4. Recommend Books: User asking for books similar to a given title, author, or topic.
+                4. Recommend Books: user seeks book recommendations based on preferences like genre or descriptions. Directly explain why these books are ideal choices, without prefacing your reasoning with any introductory phrases.
                 Example Query: "Recommend 5 books like [book title]."
 
                 5. Get Book Publication Year: User asking for the publication year of a specific book.
                 Example Query: "When was [book title] published?"
 
                 6. List Books by Author: User asking to list books written by a specific author.
-                Example Query: "List books by [author name]." or "Give me books by [author name]."
+                Example Query: "List books by [author name]."
+                
+                7. Anything else: User asking for general information or making a statement not related to the above categories.
 
                 Response Format: 
                 Intent Number: [1-6]
                 Entity: [Entity Name]
                 
-                Entity name must not contain any exstra information of context. for example , if the user input "Who is the auther of harry potter?" the entity name should
+                Entity name must not contain any extra information of context. For example, if the user input "Who is the author of harry potter?" the entity name should be "harry potter" only.
                 '{document}'
                 """
             )
@@ -84,22 +102,45 @@ class IntentExtractor:
         print(f"Response: {response}")
 
         try:
+            # Clean up the response to remove any unnecessary formatting like ** or ""
+            response = re.sub(r'\*\*', '', response).strip()
+            response = response.replace('"', '')
+
             intent_match = re.search(r"Intent Number: (\d+)", response)
             entity_match = re.search(r"Entity: ([^\n]+)", response)
 
+            cleaned_entity_name = re.sub(r'[^\w\s]', '', entity_match.group(1).strip()) if entity_match else ""
+
             intent_response = IntentResponseModel(
                 intent_number=int(intent_match.group(1)) if intent_match else 0,
-                entity_name=entity_match.group(1).strip() if entity_match else "",
+                entity_name=cleaned_entity_name,
                 num_recommendations=num_recommendations
             )
 
             memory.chat_memory.add_ai_message(response)
+            save_chat_history(memory)  # Save history after every interaction
 
             return intent_response
         except (ValueError, IndexError, AttributeError, ValidationError) as e:
             print(f"Error parsing response: {e}")
             # Re-invoke the model if validation fails
             return self.classify_intent_and_extract_entities(document)
+
+
+if __name__ == "__main__":
+    extractor = IntentExtractor(model_name="llama3.1")
+    question = "Who wrote Harry Potter?"
+    response = extractor.classify_intent_and_extract_entities(question)
+    print(response)
+
+
+
+    # def clear_memory(self):
+    #     if hasattr(memory.chat_memory, 'clear'):
+    #         memory.chat_memory.clear()  
+    #         print("Chat memory has been cleared!")
+    #     else:
+    #         print("No method to clear chat memory directly.")
 
 
 # if __name__ == "__main__":

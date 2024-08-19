@@ -14,4 +14,3 @@ export const sendMessage = async (query: string): Promise<ChatResponse> => {
     throw new Error(`Failed to send message: ${(error as Error).message}`);
   }
 };
-
