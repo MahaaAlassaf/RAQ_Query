@@ -4,7 +4,7 @@ import chromadb
 from chromadb.config import Settings
 import os
 
-from llm2.vector_data_manager import VectorDataManager
+from llm.vector_data_manager import VectorDataManager
 
 client = chromadb.PersistentClient(
     path="chroma_db", 

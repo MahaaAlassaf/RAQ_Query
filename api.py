@@ -7,7 +7,7 @@ from datetime import timedelta
 from requests import Session
 from app.database.connector import connect_to_db, get_db
 from app.middleware.request_logger import setup_middleware
-from llm2.langgraph_integration import app as langgraph_app
+from llm.langgraph_integration import app as langgraph_app
 
 from app.database.schemas.query import Query
 from app.services.author_services import (
@@ -45,7 +45,7 @@ from app.utils.config import ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Import custom modules
 from app.pgAdmi4.SaveDataToVectorstore import similarity_text
-from llm2.intent_extraction import IntentExtractor
+from llm.intent_extraction import IntentExtractor
 
 # Token verification
 from fastapi import Depends, HTTPException, Security

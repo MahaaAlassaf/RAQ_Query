@@ -1,4 +1,3 @@
-// src/api/bookAPI.tsx
 import axiosInstance from "./config";
 import {
   GetBooksResponse,

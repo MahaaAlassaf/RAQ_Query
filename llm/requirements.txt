@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-streamlit
-requests
-sentence-transformers
-chromadb
-langchain-core

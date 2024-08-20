@@ -1,4 +1,3 @@
-// src/store/bookSlice.tsx
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getBooks, getBookById } from "../api/bookAPI";
 import { Book } from "../api/interfaces";

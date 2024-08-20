@@ -1,4 +1,3 @@
-// src/components/BookDetails.tsx
 import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { UnknownAction } from "@reduxjs/toolkit";

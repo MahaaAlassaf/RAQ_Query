@@ -8,8 +8,8 @@ from langgraph.graph import StateGraph, START, END
 from app.database.connector import connect_to_db
 from app.database.schemas.books import Book
 from app.database.schemas.author import Author
-from llm2.intent_extraction import IntentExtractor
-from llm2.vector_data_manager import VectorDataManager
+from llm.intent_extraction import IntentExtractor
+from llm.vector_data_manager import VectorDataManager
 import logging
 
 ollama_model = OllamaLLM(model="llama3.1")
