@@ -89,7 +89,7 @@ def retrieve_book_info(state: GraphState) -> GraphState:
                     best_match, similarity = similar_books[0]
                     logging.info(f"Best match found: '{best_match}' with similarity: {similarity:.2f}")
 
-                    if similarity >= 0.5:  # Check if the similarity is 50% or higher
+                    if similarity >= 0.5:  # similarity is 50% or higher
                         book = db.query(Book).filter(Book.title == best_match).first()
                         if book:
                             state["book_info"] = {
@@ -186,11 +186,11 @@ def summarize_book_node(state: GraphState) -> GraphState:
         description = book_info.get('description', '').strip()
         
         if description:
-            # Consider descriptions with less than 50 words as "brief"
+            # if less than 50 words as "brief"
             word_count = len(description.split())
             
             if word_count <= 50:  # Adjust this threshold based on your preference
-                # If the description is short, summarize it into one line
+                # Ifshort, summarize it into one line
                 prompt_message = HumanMessage(
                     content=f"Please provide a concise one-line summary of the following brief book description:\n\n{description}"
                 )
