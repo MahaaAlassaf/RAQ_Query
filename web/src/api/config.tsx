@@ -9,7 +9,7 @@ const validateToken = (token: string | null): void => {
 };
 
 const axiosInstance = axios.create({
-  baseURL: baseURL,
+  baseURL: "http://localhost:8000",  // Make sure this is the correct API base URL
   headers: {
     "Content-Type": "application/json",
   },
